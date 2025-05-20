@@ -33,7 +33,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     }
 
     body {
-      margin: 2em;
+      width: 700px;
+      margin: 2em auto;
     }
 
     #header {
@@ -129,10 +130,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       const link = document.getElementById("oauth-link");
       link.href = url.toString();
       link.textContent = url.toString();
-    }
-
-    function generateVerifier() {
-      setParameter("code_verifier", randomUrlSafe());
     }
 
     function updateChallenge() {
