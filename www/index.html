@@ -1,0 +1,177 @@
+<!--
+A simple web page that allows for easily testing OAuth implementations.
+Copyright (C) 2025  Jordan Ocokoljic <jordan@nofrills.software>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <title>Oh, Auth!</title>
+
+  <style>
+    html,
+    body {
+      margin: 1em;
+    }
+
+    #header {
+      display: flex;
+      flex-direction: row;
+      margin-bottom: 1em;
+    }
+
+    #header>h1 {
+      margin: 0 auto 0 0;
+    }
+
+    #header>span {
+      margin: auto 0 0 0;
+    }
+  </style>
+
+  <script>
+    function formInput() {
+      try {
+        const baseUrl = getParameter("base_url");
+        const url = new URL(baseUrl);
+
+        url.searchParams.set("response_type", "code");
+        url.searchParams.set("client_id", getParameter("client_id"));
+        url.searchParams.set("redirect_uri", getParameter("redirect_uri"));
+        url.searchParams.set("code_challenge_method", getParameter("code_challenge_method"));
+        url.searchParams.set("code_challenge", getParameter("code_challenge"));
+
+        const link = document.getElementById("oauth-link");
+        link.href = url.toString();
+        link.innerText = url.toString();
+      } catch { }
+    }
+
+    function generateVerifier() {
+      setParameter("code_verifier", randomUrlSafe());
+    }
+
+    function updateChallenge() {
+      const method = getParameter("code_challenge_method");
+      const verifier = getParameter("code_verifier");
+
+      prepareChallenge(method, verifier).then(result => setParameter("code_challenge", result));
+    }
+
+    function getParameter(field) {
+      let input = document.querySelector(`#oauth-parameters [name="${field}"]`);
+      if (input === null) {
+        return "";
+      }
+
+      return input.value;
+    }
+
+    function setParameter(field, value) {
+      const input = document.querySelector(`#oauth-parameters input[type="text"][name="${field}"]`);
+      if (input === null) {
+        return;
+      }
+
+      input.value = value;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    const encoder = new TextEncoder();
+    async function prepareChallenge(method, verifier) {
+      switch (method) {
+        case "plain":
+          return verifier;
+        case "S256":
+          const digest = await crypto.subtle.digest("SHA-256", encoder.encode(verifier));
+          return btoa(String.fromCharCode(...new Uint8Array(digest)))
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_")
+            .replace(/=+$/, "");
+      }
+    }
+
+    const urlSafeAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-._~";
+    function randomUrlSafe() {
+      const length = 64
+      const max = 65;
+      const cap = 128;
+      const discard = cap - (cap % max + 1);
+
+      let random;
+      let typed = new Uint8Array(1);
+      let result = [];
+
+      for (let i = 0; i < length; i++) {
+        do {
+          crypto.getRandomValues(typed);
+          random = typed[0];
+        } while (random > discard);
+
+        result.push(urlSafeAlphabet[random % cap + 1]);
+      }
+
+      return result.join('');
+    }
+  </script>
+</head>
+
+<body>
+  <div id="header">
+    <h1>Oh, Auth!</h1>
+    <span>
+      Licensed under the <a href="https://www.gnu.org/licenses/agpl-3.0.en.html" target="_blank">AGPL-3.0</a>,
+      get the <a href="https://github.com/jordanocokoljic/oh-auth" target="_blank">source</a>.
+    </span>
+  </div>
+
+  <form id="oauth-parameters" oninput="formInput()">
+    <label>
+      Base URL
+      <input name="base_url" type="text">
+    </label>
+    <label>
+      Client Id
+      <input name="client_id" type="text">
+    </label>
+    <label>
+      Redirect URI
+      <input name="redirect_uri" type="text">
+    </label>
+    <label>
+      Code Challenge Method
+      <select name="code_challenge_method" oninput="updateChallenge()">
+        <option value="plain" selected>Plain</option>
+        <option value="S256">S256</option>
+      </select>
+    </label>
+    <label>
+      Code Verifier
+      <input name="code_verifier" type="text" oninput="updateChallenge()">
+      <button type="button" onclick="generateVerifier()">Random</button>
+    </label>
+    <label>
+      Code Challenge
+      <input name="code_challenge" type="text" disabled>
+    </label>
+  </form>
+
+  <a id="oauth-link" href="#" target="_blank"></a>
+</body>
+
+</html>
