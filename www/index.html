@@ -24,9 +24,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   <title>Oh, Auth!</title>
 
   <style>
-    html,
+    html {
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      margin: 1em;
+      margin: 2em;
     }
 
     #header {
@@ -42,24 +46,47 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     #header>span {
       margin: auto 0 0 0;
     }
+
+    #oauth-parameters {
+      .input {
+        display: inline-block;
+        margin-bottom: 1em;
+
+        > label {
+          display: block;
+          margin-bottom: 0.125em;
+        }
+      }
+
+      input, select {
+        box-sizing: border-box;
+        font-family: monospace;
+      }
+    }
   </style>
 
   <script>
     function formInput() {
+      let url;
       try {
-        const baseUrl = getParameter("base_url");
-        const url = new URL(baseUrl);
+        let baseUrl = getParameter("base_url");
+        if (!baseUrl.startsWith("https://") && !baseUrl.startsWith("http://")) {
+          baseUrl = "https://" + baseUrl;
+        }
 
-        url.searchParams.set("response_type", "code");
-        url.searchParams.set("client_id", getParameter("client_id"));
-        url.searchParams.set("redirect_uri", getParameter("redirect_uri"));
-        url.searchParams.set("code_challenge_method", getParameter("code_challenge_method"));
-        url.searchParams.set("code_challenge", getParameter("code_challenge"));
+        url = new URL(baseUrl);
+      } catch { return; }
 
-        const link = document.getElementById("oauth-link");
-        link.href = url.toString();
-        link.innerText = url.toString();
-      } catch { }
+      url.searchParams.set("response_type", "code");
+      url.searchParams.set("client_id", getParameter("client_id"));
+      url.searchParams.set("redirect_uri", getParameter("redirect_uri"));
+      url.searchParams.set("code_challenge_method", getParameter("code_challenge_method"));
+      url.searchParams.set("code_challenge", getParameter("code_challenge"));
+      url.searchParams.set("state", getParameter("state"));
+
+      const link = document.getElementById("oauth-link");
+      link.href = url.toString();
+      link.textContent = url.toString();
     }
 
     function generateVerifier() {
@@ -107,8 +134,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     }
 
     const urlSafeAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-._~";
-    function randomUrlSafe() {
-      const length = 64
+    function randomUrlSafe(length) {
       const max = 65;
       const cap = 128;
       const discard = cap - (cap % max + 1);
@@ -141,37 +167,42 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   </div>
 
   <form id="oauth-parameters" oninput="formInput()">
-    <label>
-      Base URL
-      <input name="base_url" type="text">
-    </label>
-    <label>
-      Client Id
-      <input name="client_id" type="text">
-    </label>
-    <label>
-      Redirect URI
-      <input name="redirect_uri" type="text">
-    </label>
-    <label>
-      Code Challenge Method
-      <select name="code_challenge_method" oninput="updateChallenge()">
+    <div class="input">
+      <label for="base_url">Base URL</label>
+      <input id="base_url" name="base_url" type="text">
+    </div>
+    <div class="input">
+      <label for="client_id">Client Id</label>
+      <input id="client_id" name="client_id" type="text">
+    </div>
+    <div class="input">
+      <label for="redirect_uri">Redirect URI</label>
+      <input id="redirect_uri" name="redirect_uri" type="text">
+    </div>
+    <div class="input">
+      <label for="state">State</label>
+      <input id="state" name="state" type="text">
+      <button type="button" onclick="setParameter('state', randomUrlSafe(32))">Random</button>
+    </div>
+    <div class="input">
+      <label for="code_challenge_method">Code Challenge Method</label>
+      <select id="code_challenge_method" name="code_challenge_method" oninput="updateChallenge()">
         <option value="plain" selected>Plain</option>
         <option value="S256">S256</option>
       </select>
-    </label>
-    <label>
-      Code Verifier
-      <input name="code_verifier" type="text" oninput="updateChallenge()">
-      <button type="button" onclick="generateVerifier()">Random</button>
-    </label>
-    <label>
-      Code Challenge
-      <input name="code_challenge" type="text" disabled>
-    </label>
+    </div>
+    <div class="input">
+      <label for="code_verifier">Code Verifier</label>
+      <input id="code_verifier" name="code_verifier" type="text" oninput="updateChallenge()">
+      <button type="button" onclick="setParameter('code_verifier', randomUrlSafe(64))">Random</button>
+    </div>
+    <div class="input">
+      <label for="code_challenge">Code Challenge</label>
+      <input id="code_challenge" name="code_challenge" type="text" disabled>
+    </div>
   </form>
 
-  <a id="oauth-link" href="#" target="_blank"></a>
+  <a id="oauth-link" href="#" target="_blank">Go</a>
 </body>
 
 </html>
