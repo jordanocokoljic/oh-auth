@@ -122,10 +122,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
       url.searchParams.set("response_type", "code");
       url.searchParams.set("client_id", getParameter("client_id"));
-      url.searchParams.set("redirect_uri", getParameter("redirect_uri"));
-      url.searchParams.set("code_challenge_method", getParameter("code_challenge_method"));
-      url.searchParams.set("code_challenge", getParameter("code_challenge"));
-      url.searchParams.set("state", getParameter("state"));
+
+      const redirectUri = getParameter("redirect_uri");
+      if (redirectUri) {
+        url.searchParams.set("redirect_uri", redirectUri);
+      }
+      
+      const state = getParameter("state");
+      if (state) {
+        url.searchParams.set("state", state);
+      }
+      
+      const codeChallenge = getParameter("code_challenge");
+      if (codeChallenge) {
+        url.searchParams.set("code_challenge", codeChallenge);
+        url.searchParams.set("code_challenge_method", getParameter("code_challenge_method"));
+      }
 
       const link = document.getElementById("oauth-link");
       link.href = url.toString();
@@ -133,9 +145,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     }
 
     function updateChallenge() {
-      const method = getParameter("code_challenge_method");
       const verifier = getParameter("code_verifier");
+      if (verifier === "") {
+        setParameter("code_challenge", "");
+        return;
+      }
 
+      const method = getParameter("code_challenge_method");
       prepareChallenge(method, verifier).then(result => setParameter("code_challenge", result));
     }
 
