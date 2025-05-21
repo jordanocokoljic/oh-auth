@@ -33,8 +33,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     }
 
     body {
-      width: 700px;
+      max-width: 700px;
       margin: 2em auto;
+      padding: 0 1em;
     }
 
     #header {
@@ -110,6 +111,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
   <script>
     function formInput() {
+      const link = document.getElementById("oauth-link");
+      link.href = "";
+      link.textContent = "";
+
       let url;
       try {
         let baseUrl = getParameter("base_url");
@@ -139,7 +144,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         url.searchParams.set("code_challenge_method", getParameter("code_challenge_method"));
       }
 
-      const link = document.getElementById("oauth-link");
       link.href = url.toString();
       link.textContent = url.toString();
     }
